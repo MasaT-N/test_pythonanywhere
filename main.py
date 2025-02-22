@@ -12,6 +12,7 @@ work_dir = Path(sys.argv[0]).parent
 
 @app.route("/")
 def hello():
+    create_table()
     purchase_requisitions = get_purchase_requisition_list() 
     purchase_requisition_count = get_purchase_requisition_count()
     return render_template('index.html', purchase_requisitions=purchase_requisitions, purchase_requisition_count = purchase_requisition_count)
@@ -20,7 +21,6 @@ def hello():
 def check():
     if request.method == 'POST':
         data = request.json
-        create_table()
         insert_data(data)
     else:
         data = 'no data'
@@ -30,6 +30,9 @@ def create_table():
     db_path = os.path.join(work_dir,'purchase_requisition.db')
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
+    strSQL = "DROP TABLE IF EXISTS purchase_requisition;"
+    cur.execute(strSQL)
+    # conn.commit()
     strSQL = """    
         CREATE TABLE purchase_requisition( 
             document_id integer PRIMARY KEY, 
@@ -43,7 +46,7 @@ def create_table():
             end_date text,    
             json_data text, 
             created_at text DEFAULT CURRENT_TIMESTAMP
-        )
+        );
     """
     cur.execute(strSQL)
     conn.commit()
@@ -152,11 +155,13 @@ def get_purchase_requisition_list():
     res = cur.fetchall()
     td = datetime.timedelta(hours=9)
     tbl_col = ['document_id', 'document_number', 'document_title', 'request_user', 'request_group', 'request_factory', 'amount', 'flow_status', 'end_date']
+    result = []
     for row in res:
         d_row = dict(zip(tbl_col,row))
         d_row['end_date'] = datetime.datetime.strptime(d_row['end_date'],'%Y-%m-%d %H:%M:%S') + td
+        result.append(d_row)
     conn.close()
-    return d_row 
+    return result
         
 def get_purchase_requisition_count():
     db_path = os.path.join(work_dir,'purchase_requisition.db')
