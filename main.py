@@ -30,27 +30,36 @@ def create_table():
     db_path = os.path.join(work_dir,'purchase_requisition.db')
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    strSQL = "DROP TABLE IF EXISTS purchase_requisition;"
-    cur.execute(strSQL)
-    # conn.commit()
-    strSQL = """    
-        CREATE TABLE purchase_requisition( 
-            document_id integer PRIMARY KEY, 
-            document_number text,
-            document_title text,
-            request_user text,
-            request_group text,
-            request_factory text,
-            amount integer default 0,
-            flow_status text,
-            end_date text,    
-            json_data text, 
-            created_at text DEFAULT CURRENT_TIMESTAMP
-        );
+
+    # テーブルが存在するか確認するSQL
+    strSQL = """
+        SELECT name FROM sqlite_master WHERE type='table' AND name='purchase_requisition';
     """
     cur.execute(strSQL)
-    conn.commit()
+    res = cur.fetchone()
+
+    # テーブルが存在しなければ作成する
+    if res is None:
+        strSQL = """    
+            CREATE TABLE purchase_requisition( 
+                document_id integer PRIMARY KEY, 
+                document_number text,
+                document_title text,
+                request_user text,
+                request_group text,
+                request_factory text,
+                amount integer default 0,
+                flow_status text,
+                end_date text,    
+                json_data text, 
+                created_at text DEFAULT CURRENT_TIMESTAMP
+            );
+        """
+        cur.execute(strSQL)
+        conn.commit()
+
     conn.close()
+
 
 def insert_data(data):
     db_path = os.path.join(work_dir,'purchase_requisition.db')
