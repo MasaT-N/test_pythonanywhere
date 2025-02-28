@@ -2,3 +2,4 @@
 .test_pythonanywhere.py
 .gitignore
 purchase_requisition.db
+downloads/

@@ -1,1 +1,11 @@
-limit: 20
+# このファイルは、CollaboFlowの設定ファイルです。
+# このファイルを編集して、CollaboFlowの設定を行ってください。
+limit: 100
+collaboflow:
+  api_base_url: "https://cloud.collaboflow.com/" # コラボフローAPIのベースURL
+  tenant_id: "nagatsu" # あなたのテナントID
+  client_name: "hirohito_suzuki@nagatsu-g.co.jp" # クライアント名
+  # client_name: "taro" # クライアント名
+  app_cd: 1 # アプリケーションコード
+  api_key: "jePKfhSMcuwaoITqd4ppgSTtp6XWREkS" # APIキー
+  # api_key: "qQzEC6cUAZfV03RvbABYm40L5mC6qUFn" # APIキー

@@ -1,56 +1,162 @@
 <!doctype html>
 <html lang="ja">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>購買申請決裁情報</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico" id="favicon">
     <link rel="apple-touch-icon" type="image/png" href="/static/images/apple-touch-icon-180x180.png">
     <link rel="icon" type="image/png" href="/static/images/android-chrome-192x192.png.png">
-  </head>
-  <body>
-    
-    <div class="container">
-        <div class="d-flex justify-content-between bd-highlight mb-2">
-            <div class="p-2 bd-highlight"><h1>決裁情報一覧</h1></div>
-            {% if purchase_requisition_count %}
-                <div class="p-2 bd-highlight"><span class="badge bg-primary">総登録数：{{ purchase_requisition_count }}件</span></div>
-            {% endif %}
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="d-flex justify-content-between bd-highlight mb-2">
+        <div class="p-2 bd-highlight"><h1>購買申請決裁情報一覧</h1></div>
+        {% if purchase_requisition_count %}
+        <div class="p-2 bd-highlight"><span class="badge bg-primary">総登録数：{{ purchase_requisition_count }}件</span></div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <!-- トグルスイッチ -->
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="showDownloadedToggle" checked>
+            <label class="form-check-label" for="showDownloadedToggle">未ダウンロードのみ表示</label>
         </div>
-        
-      <table class="table table-striped">
+    </div>
+
+    <!-- 担当工場ラジオボタン -->
+    <div class="mb-3">
+        <p>担当工場で絞り込み</p>
+        <div class="radio-group">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="factoryFilter" id="factoryAll" value="all" checked>
+                <label class="form-check-label" for="factoryAll">すべて</label>
+            </div>
+            {% for factory in factories %}
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="factoryFilter" id="factory{{ factory }}"
+                       value="{{ factory }}">
+                <label class="form-check-label" for="factory{{ factory }}">{{ factory }}</label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <table class="table table-striped">
         <thead>
-          <tr>
-            <th scope="col">ID</th>
+        <tr>
+            <th scope="col">文書ID</th>
             <th scope="col">申請内容</th>
             <th scope="col">担当者</th>
             <th scope="col">担当工場</th>
-            <th scope="col">担当部門</th>    
+            <th scope="col">担当部門</th>
             <th scope="col">決裁日時</th>
-          </tr>
+        </tr>
         </thead>
         {% if purchase_requisitions %}
         <tbody>
-            {% for purchase_requisition in purchase_requisitions %}
-            <tr>
-              <th scope="row">{{ purchase_requisition['document_id'] }}</th>
-              <td>{{ purchase_requisition['document_title'] }}</td>
-              <td>{{ purchase_requisition['request_user'] }}</td>
-              <td>{{ purchase_requisition['request_factory'] }}</td>
-              <td>{{ purchase_requisition['request_group'] }}</td>
-              <td>{{ purchase_requisition['end_date'] }}</td>      
-            </tr>    
-            {% endfor %}            
+        {% for purchase_requisition in purchase_requisitions %}
+        <tr data-downloaded="{{ purchase_requisition.downloaded }}"
+            data-factory="{{ purchase_requisition.request_factory }}">
+            <th scope="row">
+                {% if purchase_requisition.downloaded == 1 %}
+                <a href="#" class="btn btn-secondary">ダウンロード済み</a>
+                {% else %}
+                <a href="/download/{{ purchase_requisition.document_id }}" class="btn btn-primary" download-link>ダウンロード</a>
+                {% endif %}
+            </th>
+            <td>{{ purchase_requisition['document_title'] }}</td>
+            <td>{{ purchase_requisition['request_user'] }}</td>
+            <td>{{ purchase_requisition['request_factory'] }}</td>
+            <td>{{ purchase_requisition['request_group'] }}</td>
+            <td>{{ purchase_requisition['end_date'] }}</td>
+        </tr>
+        {% endfor %}
         </tbody>
         {% else %}
-          <p>購買申請情報はありません。</p>      
+        <p>購買申請情報はありません。</p>
         {% endif %}
 
-      </table>
-    </div>
+    </table>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
+        crossorigin="anonymous"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggle = document.getElementById('showDownloadedToggle');
+        const factoryRadios = document.querySelectorAll('input[name="factoryFilter"]');
+        const rows = document.querySelectorAll('tbody tr');
+        //const downloadLinks = document.querySelectorAll('a[download-link]') //この行を削除
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
-  </body>
+        function filterRows() {
+            const showDownloaded = toggle.checked;
+            const selectedFactory = document.querySelector('input[name="factoryFilter"]:checked').value;
+
+            rows.forEach(row => {
+                const downloaded = row.dataset.downloaded === '1';
+                const factory = row.dataset.factory;
+
+                let showRow = true;
+                if (showDownloaded && downloaded) {
+                    showRow = false;
+                }
+                if (selectedFactory !== 'all' && factory !== selectedFactory) {
+                    showRow = false;
+                }
+
+                row.classList.toggle('hidden', !showRow);
+            });
+        }
+
+        toggle.addEventListener('change', filterRows);
+        factoryRadios.forEach(radio => {
+            radio.addEventListener('change', filterRows);
+        });
+
+        filterRows(); // 初期表示のために一度実行
+
+        //ダウンロードリンクをクリックした場合に、ダウンロードとリロードを行う。
+        const downloadLinks = document.querySelectorAll('a[href^="/download/"]'); //href属性が`/download/`で始まる要素を取得
+        downloadLinks.forEach(link => {
+            link.addEventListener('click', (event) => {
+              event.preventDefault(); // 通常のリンクの動作をキャンセル
+              const documentId = link.getAttribute('href').split('/')[2]; // URLからdocument_idを取得
+              //ファイルをダウンロードする
+              fetch(link.href).then(response => {
+                response.blob().then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = response.headers.get('Content-Disposition').split('filename=')[1];
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                    //リロードする
+                    fetch(`/download/reload/${documentId}`).then(() => {
+                      window.location.reload();
+                    });
+                });
+              });
+            });
+        });        
+    });
+</script>
+</body>
 </html>
